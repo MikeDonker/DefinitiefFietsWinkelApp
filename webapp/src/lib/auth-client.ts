@@ -1,0 +1,8 @@
+import { createAuthClient } from "better-auth/react";
+
+export const authClient = createAuthClient({
+  baseURL: import.meta.env.VITE_BACKEND_URL || undefined,
+});
+
+// Re-export hooks for convenience
+export const { useSession, signIn, signOut, signUp } = authClient;

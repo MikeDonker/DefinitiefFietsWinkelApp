@@ -1,0 +1,40 @@
+# Node
+node_modules/
+dist/
+build/
+
+# Logs
+logs/
+*.log
+server.log
+studio.log
+
+# Environment files (NO SECRETS IN GIT)
+.env
+.env.*
+!.env.example
+
+# Prisma SQLite databases
+prisma/dev.db
+prisma/*.db
+prisma/*.db-shm
+prisma/*.db-wal
+
+# Prisma generated files
+/generated/prisma
+
+# Coverage
+coverage/
+*.lcov
+
+# Caches
+.eslintcache
+.cache
+*.tsbuildinfo
+
+# OS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/

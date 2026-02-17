@@ -1,0 +1,193 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// =============================================================================
+// Better Auth Tables
+// =============================================================================
+
+model User {
+  id            String    @id
+  name          String
+  email         String    @unique
+  emailVerified Boolean
+  image         String?
+  createdAt     DateTime
+  updatedAt     DateTime
+
+  sessions            Session[]
+  accounts             Account[]
+  userRoles            UserRole[]
+  inventoryMovements   InventoryMovement[]
+  assignedWorkOrders   ServiceWorkOrder[]   @relation("AssignedTo")
+  createdWorkOrders    ServiceWorkOrder[]   @relation("CreatedBy")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime
+  updatedAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime
+  updatedAt             DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime
+  updatedAt  DateTime
+}
+
+// =============================================================================
+// Role System Tables
+// =============================================================================
+
+model Role {
+  id        String   @id @default(cuid())
+  name      String   @unique // e.g. admin, manager, medewerker, readonly
+  createdAt DateTime @default(now())
+
+  rolePermissions RolePermission[]
+  userRoles       UserRole[]
+}
+
+model Permission {
+  id        String   @id @default(cuid())
+  name      String   @unique // e.g. bikes:read, bikes:create, bikes:update, bikes:delete, workorders:read, workorders:create, workorders:update
+  createdAt DateTime @default(now())
+
+  rolePermissions RolePermission[]
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+model UserRole {
+  userId String
+  roleId String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+}
+
+// =============================================================================
+// Bike Shop Tables
+// =============================================================================
+
+model Brand {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  models Model[]
+  bikes  Bike[]
+}
+
+model Model {
+  id        String   @id @default(cuid())
+  name      String
+  brandId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  brand Brand  @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  bikes Bike[]
+
+  @@unique([name, brandId])
+}
+
+model Bike {
+  id            Int      @id @default(autoincrement())
+  frameNumber   String   @unique
+  brandId       String
+  modelId       String
+  year          Int?
+  color         String?
+  size          String?
+  purchasePrice Float? // Decimal not supported in SQLite, using Float
+  sellingPrice  Float? // Decimal not supported in SQLite, using Float
+  status        String   @default("IN_STOCK") // BikeStatus: IN_STOCK, IN_SERVICE, RESERVED, SOLD, SCRAPPED
+  notes         String?
+  soldAt        DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  brand              Brand               @relation(fields: [brandId], references: [id])
+  model              Model               @relation(fields: [modelId], references: [id])
+  inventoryMovements InventoryMovement[]
+  serviceWorkOrders  ServiceWorkOrder[]
+}
+
+model InventoryMovement {
+  id            Int      @id @default(autoincrement())
+  bikeId        Int
+  fromStatus    String? // BikeStatus: IN_STOCK, IN_SERVICE, RESERVED, SOLD, SCRAPPED
+  toStatus      String  // BikeStatus: IN_STOCK, IN_SERVICE, RESERVED, SOLD, SCRAPPED
+  reason        String?
+  performedById String
+  createdAt     DateTime @default(now())
+
+  bike        Bike @relation(fields: [bikeId], references: [id])
+  performedBy User @relation(fields: [performedById], references: [id])
+}
+
+model ServiceWorkOrder {
+  id            Int       @id @default(autoincrement())
+  bikeId        Int
+  description   String
+  status        String    @default("OPEN") // WorkOrderStatus: OPEN, IN_PROGRESS, WAITING_PARTS, COMPLETED, CANCELLED
+  priority      String    @default("MEDIUM") // Priority: LOW, MEDIUM, HIGH, URGENT
+  assignedToId  String?
+  createdById   String
+  completedAt   DateTime?
+  estimatedCost Float? // Decimal not supported in SQLite, using Float
+  actualCost    Float? // Decimal not supported in SQLite, using Float
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  bike       Bike  @relation(fields: [bikeId], references: [id])
+  assignedTo User? @relation("AssignedTo", fields: [assignedToId], references: [id])
+  createdBy  User  @relation("CreatedBy", fields: [createdById], references: [id])
+}
