@@ -4,7 +4,6 @@ import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import "./env";
 import { auth } from "./auth";
-import { prismaReady } from "./prisma";
 import { sampleRouter } from "./routes/sample";
 import { bikesRouter } from "./routes/bikes";
 import { workOrdersRouter } from "./routes/work-orders";
@@ -56,16 +55,6 @@ app.use(
     credentials: true,
   })
 );
-
-// Ensure SQLite pragmas are applied before first DB query
-let dbReady = false;
-app.use("*", async (c, next) => {
-  if (!dbReady) {
-    await prismaReady;
-    dbReady = true;
-  }
-  return next();
-});
 
 // Logging
 app.use("*", logger());

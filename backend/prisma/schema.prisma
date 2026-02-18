@@ -145,8 +145,8 @@ model Bike {
   year          Int?
   color         String?
   size          String?
-  purchasePrice Float? // Decimal not supported in SQLite, using Float
-  sellingPrice  Float? // Decimal not supported in SQLite, using Float
+  purchasePrice Float?
+  sellingPrice  Float?
   status        String   @default("IN_STOCK") // BikeStatus: IN_STOCK, IN_SERVICE, RESERVED, SOLD, SCRAPPED
   notes         String?
   soldAt        DateTime?

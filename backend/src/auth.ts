@@ -6,7 +6,7 @@ import { clearRoleCache } from "./middleware/auth-middleware";
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, {
-    provider: "sqlite",
+    provider: "postgresql",
   }),
   secret: env.BETTER_AUTH_SECRET,
   baseURL: env.BACKEND_URL,
@@ -40,12 +40,13 @@ export const auth = betterAuth({
   },
   hooks: {
     after: async (ctx) => {
+      const anyCtx = ctx as any;
       // Only run on sign-up; all other paths pass through
-      if (ctx.path !== "/sign-up/email") return { response: ctx.returned };
+      if (anyCtx.path !== "/sign-up/email") return { response: anyCtx.returned };
 
-      const body = ctx.returned as { token?: string; user?: { id: string } } | undefined;
+      const body = anyCtx.returned as { token?: string; user?: { id: string } } | undefined;
       const userId = body?.user?.id;
-      if (!userId) return { response: ctx.returned };
+      if (!userId) return { response: anyCtx.returned };
 
       // Assign default "medewerker" role to new users
       try {
@@ -62,7 +63,7 @@ export const auth = betterAuth({
         console.error("[Auth] Failed to assign default role:", e);
       }
 
-      return { response: ctx.returned };
+      return { response: anyCtx.returned };
     },
   },
 });

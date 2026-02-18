@@ -9,8 +9,18 @@ const envSchema = z.object({
   PORT: z.string().optional().default("3000"),
   NODE_ENV: z.string().optional(),
 
-  // Database
-  DATABASE_URL: z.string().default("file:./dev.db"),
+  // Database (Supabase Postgres only – no SQLite)
+  DATABASE_URL: z.string().min(1, "DATABASE_URL is verplicht"),
+  DIRECT_URL: z.string().min(1, "DIRECT_URL is verplicht"),
+
+  // Supabase (server-side)
+  SUPABASE_URL: z.string().min(1, "SUPABASE_URL is verplicht"),
+  SUPABASE_ANON_KEY: z.string().min(1, "SUPABASE_ANON_KEY is verplicht"),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, "SUPABASE_SERVICE_ROLE_KEY is verplicht"),
+
+  // Supabase (frontend – must also be present in Vercel env)
+  NEXT_PUBLIC_SUPABASE_URL: z.string().min(1, "NEXT_PUBLIC_SUPABASE_URL is verplicht"),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1, "NEXT_PUBLIC_SUPABASE_ANON_KEY is verplicht"),
 
   // Auth - reject known placeholder values
   BETTER_AUTH_SECRET: z

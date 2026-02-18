@@ -65,10 +65,12 @@ async function main() {
     });
 
     for (const permName of rolePermissions) {
+      const permission = permissions[permName];
+      if (!permission) continue;
       await prisma.rolePermission.create({
         data: {
           roleId: role.id,
-          permissionId: permissions[permName].id,
+          permissionId: permission.id,
         },
       });
     }
@@ -301,7 +303,7 @@ async function main() {
   const createdBikes: Array<{ id: number; status: string }> = [];
 
   for (let i = 0; i < bikeData.length; i++) {
-    const data = bikeData[i];
+    const data = bikeData[i]!;
     const frameNumber = `WBK${(123456 + i).toString()}`;
 
     const bike = await prisma.bike.upsert({
@@ -309,8 +311,8 @@ async function main() {
       update: {},
       create: {
         frameNumber,
-        brandId: brands[data.brand].id,
-        modelId: models[`${data.brand}-${data.model}`].id,
+        brandId: brands[data.brand]!.id,
+        modelId: models[`${data.brand}-${data.model}`]!.id,
         year: 2023 + Math.floor(Math.random() * 2),
         color: data.color,
         size: data.size,
@@ -349,6 +351,9 @@ async function main() {
 
   // Get bikes that are IN_SERVICE
   const serviceBikes = createdBikes.filter((b) => b.status === "IN_SERVICE");
+  if (serviceBikes.length === 0) {
+    console.log("No service bikes found, skipping work order seed");
+  }
 
   const workOrderData = [
     {
@@ -416,29 +421,31 @@ async function main() {
   ];
 
   let workOrderCount = 0;
-  for (let i = 0; i < workOrderData.length; i++) {
-    const data = workOrderData[i];
-    // Cycle through service bikes
-    const bikeId = serviceBikes[i % serviceBikes.length].id;
+  if (serviceBikes.length > 0) {
+    for (let i = 0; i < workOrderData.length; i++) {
+      const data = workOrderData[i]!;
+      // Cycle through service bikes
+      const bikeId = serviceBikes[i % serviceBikes.length]!.id;
 
-    await prisma.serviceWorkOrder.create({
-      data: {
-        bikeId,
-        description: data.description,
-        status: data.status,
-        priority: data.priority,
-        createdById: systemUser.id,
-        assignedToId: systemUser.id,
-        estimatedCost: data.estimatedCost,
-        actualCost: data.actualCost || null,
-        completedAt: data.status === "COMPLETED" ? new Date() : null,
-        notes:
-          data.status === "WAITING_PARTS"
-            ? "Waiting for parts to arrive from supplier"
-            : null,
-      },
-    });
-    workOrderCount++;
+      await prisma.serviceWorkOrder.create({
+        data: {
+          bikeId,
+          description: data.description,
+          status: data.status,
+          priority: data.priority,
+          createdById: systemUser.id,
+          assignedToId: systemUser.id,
+          estimatedCost: data.estimatedCost,
+          actualCost: data.actualCost || null,
+          completedAt: data.status === "COMPLETED" ? new Date() : null,
+          notes:
+            data.status === "WAITING_PARTS"
+              ? "Waiting for parts to arrive from supplier"
+              : null,
+        },
+      });
+      workOrderCount++;
+    }
   }
   console.log(`Created ${workOrderCount} work orders`);
 
