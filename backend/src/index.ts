@@ -104,10 +104,8 @@ app.use("/api/auth/*", async (c, next) => {
 });
 
 // Better Auth handler - must be before the session middleware
-// Clone the request so the body is not consumed
-app.on(["GET", "POST"], "/api/auth/*", (c) => {
-  return auth.handler(c.req.raw.clone() as unknown as Request);
-});
+app.all("/api/auth/*", (c) => auth.handler(c.req.raw));
+app.all("/api/auth", (c) => auth.handler(c.req.raw));
 
 // Optional auth middleware: populate user/session for non-auth /api routes
 app.use("/api/*", async (c, next) => {
