@@ -22,6 +22,7 @@ export const auth = betterAuth({
     "https://*.vibecodeapp.com",
     "https://*.vibecode.dev",
     "https://vibecode.dev",
+    "https://definitief-fiets-winkel-app.vercel.app",
   ],
   advanced: {
     crossSubDomainCookies: {
